@@ -6,7 +6,7 @@ class ERB
     HTML_ESCAPE = { '&' => '&amp;',  '>' => '&gt;',   '<' => '&lt;', '"' => '&quot;', "'" => '&#39;' }
     JSON_ESCAPE = { '&' => '\u0026', '>' => '\u003E', '<' => '\u003C' }
     HTML_ESCAPE_ONCE_REGEXP = /["><']|&(?!([a-zA-Z]+|(#\d+));)/
-    JSON_ESCAPE_REGEXP = /[&"><]/
+    JSON_ESCAPE_REGEXP = /[&><]/
 
     # A utility method for escaping HTML tag characters.
     # This method is also aliased as <tt>h</tt>.
