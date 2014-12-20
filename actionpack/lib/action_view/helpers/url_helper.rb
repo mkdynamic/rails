@@ -423,6 +423,7 @@ module ActionView
       # * <tt>:body</tt> - Preset the body of the email.
       # * <tt>:cc</tt> - Carbon Copy additional recipients on the email.
       # * <tt>:bcc</tt> - Blind Carbon Copy additional recipients on the email.
+      # * <tt>:reply_to</tt> - Reply-To field of the email.
       #
       # ==== Obfuscation
       # Prior to Rails 4.0, +mail_to+ provided options for encoding the address
@@ -454,9 +455,9 @@ module ActionView
         html_options, name = name, nil if block_given?
         html_options = (html_options || {}).stringify_keys
 
-        extras = %w{ cc bcc body subject }.map { |item|
+        extras = %w{ cc bcc body subject reply_to }.map { |item|
           option = html_options.delete(item) || next
-          "#{item}=#{Rack::Utils.escape_path(option)}"
+          "#{item.dasherize}=#{Rack::Utils.escape(option).gsub("+", "%20")}"
         }.compact
         extras = extras.empty? ? '' : '?' + ERB::Util.html_escape(extras.join('&'))
 
