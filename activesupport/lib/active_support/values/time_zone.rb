@@ -223,6 +223,7 @@ module ActiveSupport
     # Compare this time zone to the parameter. The two are compared first on
     # their offsets, and then by name.
     def <=>(zone)
+      return unless zone.respond_to?(:utc_offset) && zone.respond_to?(:name)
       result = (utc_offset <=> zone.utc_offset)
       result = (name <=> zone.name) if result == 0
       result
@@ -267,7 +268,7 @@ module ActiveSupport
     #
     #   Time.zone.now                 # => Fri, 31 Dec 1999 14:00:00 HST -10:00
     #   Time.zone.parse('22:30:00')   # => Fri, 31 Dec 1999 22:30:00 HST -10:00
-    def parse(str, now=now)
+    def parse(str, now=self.now)
       parts = Date._parse(str, false)
       return if parts.empty?
 
