@@ -467,9 +467,9 @@ module ActionView
         html_options, name = name, nil if block_given?
         html_options = (html_options || {}).stringify_keys
 
-        extras = %w{ cc bcc body subject }.map! { |item|
+        extras = %w{ cc bcc body subject reply_to }.map! { |item|
           option = html_options.delete(item) || next
-          "#{item}=#{Rack::Utils.escape_path(option)}"
+          "#{item.dasherize}=#{Rack::Utils.escape(option).gsub("+", "%20")}"
         }.compact
         extras = extras.empty? ? '' : '?' + ERB::Util.html_escape(extras.join('&'))
 
