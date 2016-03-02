@@ -67,7 +67,11 @@ class TestController < ActionController::Base
   def dynamic_render_with_file
     # This is extremely bad, but should be possible to do.
     file = params[:id] # => String, Hash
-    render file: file
+    render :file => file
+  end
+
+  def dynamic_inline_render
+    render :inline => "<%= render(params) %>"
   end
 
   def conditional_hello_with_public_header
@@ -243,27 +247,6 @@ class TestController < ActionController::Base
 
   def accessing_action_name_in_template
     render :inline =>  "<%= action_name %>"
-  end
-
-  def test_dynamic_render_with_file
-    # This is extremely bad, but should be possible to do.
-    assert File.exist?(File.join(File.dirname(__FILE__), '../../test/abstract_unit.rb'))
-    response = get :dynamic_render_with_file, { id: '../\\../test/abstract_unit.rb' }
-    assert_equal File.read(File.join(File.dirname(__FILE__), '../../test/abstract_unit.rb')),
-      response.body
-  end
-
-  def test_dynamic_render
-    assert File.exist?(File.join(File.dirname(__FILE__), '../../test/abstract_unit.rb'))
-    assert_raises ActionView::MissingTemplate do
-      get :dynamic_render, { id: '../\\../test/abstract_unit.rb' }
-    end
-  end
-
-  def test_dynamic_render_file_hash
-    assert_raises ArgumentError do
-      get :dynamic_render, { id: { file: '../\\../test/abstract_unit.rb' } }
-    end
   end
 
   def accessing_controller_name_in_template
@@ -757,6 +740,15 @@ class MetalTestController < ActionController::Metal
   end
 end
 
+class MetalWithoutAVTestController < ActionController::Metal
+  include AbstractController::Rendering
+  include ActionController::Rendering
+
+  def dynamic_params_render
+    render params
+  end
+end
+
 class RenderTest < ActionController::TestCase
   tests TestController
 
@@ -767,6 +759,58 @@ class RenderTest < ActionController::TestCase
     @controller.logger = Logger.new(nil)
 
     @request.host = "www.nextangle.com"
+    ActionController::Base.view_paths.paths.each(&:clear_cache)
+  end
+
+  def test_dynamic_render_with_file
+    # This is extremely bad, but should be possible to do.
+    assert File.exist?(File.join(File.dirname(__FILE__), '../../test/abstract_unit.rb'))
+    response = get :dynamic_render_with_file, { :id => '../\\../test/abstract_unit.rb' }
+    assert_equal File.read(File.join(File.dirname(__FILE__), '../../test/abstract_unit.rb')),
+      response.body
+  end
+
+  # :ported:
+  def test_dynamic_render_with_absolute_path
+    file = Tempfile.new('name')
+    file.write "secrets!"
+    file.flush
+    assert_raises ActionView::MissingTemplate do
+      get :dynamic_render, { :id => file.path }
+    end
+  ensure
+    file.close
+    file.unlink
+  end
+
+  def test_dynamic_render
+    assert File.exist?(File.join(File.dirname(__FILE__), '../../test/abstract_unit.rb'))
+    assert_raises ActionView::MissingTemplate do
+      get :dynamic_render, { :id => '../\\../test/abstract_unit.rb' }
+    end
+  end
+
+  def test_dynamic_render_file_hash
+    assert_raises ArgumentError do
+      get :dynamic_render, { :id => { :file => '../\\../test/abstract_unit.rb' } }
+    end
+  end
+
+  def test_dynamic_inline
+    assert_raises ArgumentError do
+      get :dynamic_render, { :id => { :inline => '<%= RUBY_VERSION %>' } }
+    end
+  end
+
+  def test_dynamic_render_on_view
+    file = Tempfile.new('_name')
+    file.write "secrets!"
+    file.flush
+
+    e = assert_raises ActionView::Template::Error do
+      get :dynamic_inline_render, { :file => file.path }
+    end
+    assert_equal "render parameters are not permitted", e.message
   end
 
   # :ported:
@@ -1641,5 +1685,16 @@ class MetalRenderTest < ActionController::TestCase
   def test_access_to_logger_in_view
     get :accessing_logger_in_template
     assert_equal "NilClass", @response.body
+  end
+end
+
+class MetalRenderWithoutAVTest < ActionController::TestCase
+  tests MetalWithoutAVTestController
+
+  def test_dynamic_params_render
+    e = assert_raises ArgumentError do
+      get :dynamic_params_render, { inline: '<%= RUBY_VERSION %>' }
+    end
+    assert_equal "render parameters are not permitted", e.message
   end
 end

@@ -17,10 +17,12 @@ else
   gem 'journey'
 end
 
+gem 'i18n', '~> 0.6.11'
+gem 'test-unit', '~> 3.0.0'
+
 if RUBY_VERSION < '1.9.3'
-  gem 'i18n', '~> 0.6.11'
+  gem 'rack-cache', '~> 1.2.0'
 end
-gem 'test-unit', '~> 3.0'
 
 # This needs to be with require false to avoid
 # it being automatically loaded by sprockets
@@ -73,7 +75,7 @@ platforms :ruby do
       gem 'pg', '>= 0.11.0'
     end
     gem 'mysql', '>= 2.8.1'
-    gem 'mysql2', '>= 0.3.10'
+    gem 'mysql2', '~> 0.3.10'
   end
 end
 
